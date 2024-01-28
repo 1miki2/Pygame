@@ -38,12 +38,19 @@ def game():
 
 
 class Player(pygame.sprite.Sprite):
-    pass
+    def __init__(self, coord):
+        super().__init__(all_sprites)
+        self.image = pygame.Surface([10, 10])
+        self.rect = pygame.Rect(coord[0], coord[1], 10, 10)
+        self.image.fill('green')
+
+    def update(self, *args):
+        pass
 
 
 class Leaf(pygame.sprite.Sprite):
     def __init__(self):
-        super().__init__(leaves_sprites, leaves_sprites)
+        super().__init__(leaves_sprites)
         self.image = pygame.transform.scale(load_image(choice(['red_leaf.png', 'green_leaf.png'])), (64, 48))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = random.randint(0, width - 64), random.randint(0, height - 48)
@@ -59,6 +66,8 @@ all_sprites = pygame.sprite.Group()
 leaves_sprites = pygame.sprite.Group()
 running = True
 Leaf()
+for i in range(5):
+    Player((200 - 10 * i, 200))
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -69,5 +78,4 @@ while running:
     all_sprites.draw(screen)
     all_sprites.update()
     pygame.display.flip()
-    clock.tick(30)
 pygame.quit()

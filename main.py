@@ -43,9 +43,13 @@ class Player(pygame.sprite.Sprite):
 
 class Leaf(pygame.sprite.Sprite):
     def __init__(self):
-        super().__init__(leaves_sprites, all_sprites)
-        self.image = pygame.transform.scale(load_image(choice(['red_leaf.png', 'green_leaf.png'])), (50, 50))
-        self.rect = self.image.get_rect().move(random.randint(0, width), random.randint(0, height))
+        super().__init__(leaves_sprites, leaves_sprites)
+        self.image = pygame.transform.scale(load_image(choice(['red_leaf.png', 'green_leaf.png'])), (64, 48))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = random.randint(0, width - 64), random.randint(0, height - 48)
+        if pygame.sprite.spritecollideany(self, all_sprites):
+            self.rect.x, self.rect.y = random.randint(0, width - 64), random.randint(0, height - 48)
+        all_sprites.add(leaves_sprites)
 
 
 start_screen()

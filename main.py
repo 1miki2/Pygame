@@ -9,12 +9,12 @@ pygame.init()
 size = width, height = 1000, 650
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+leaves = ['red_leaf.png', 'green_leaf.png', 'purple_leaf.png', 'pink_leaf.png']
 font_style = pygame.font.SysFont(None, 50)
 worm_size = 50
 worm_speed = 10
 running = True
 game_over = False
-leaves = []
 
 
 def message(msg, color):
@@ -84,10 +84,10 @@ class Player(pygame.sprite.Sprite):
 class Leaf(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(leaves_sprites)
-        self.image = pygame.transform.scale(load_image(choice(['red_leaf.png', 'green_leaf.png'])), (64, 48))
+        self.image = pygame.transform.scale(load_image(choice(leaves)), (64, 48))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = random.randint(0, width - 64), random.randint(0, height - 48)
-        if pygame.sprite.spritecollideany(self, all_sprites):
+        while pygame.sprite.spritecollideany(self, all_sprites):
             self.rect.x, self.rect.y = random.randint(0, width - 64), random.randint(0, height - 48)
         all_sprites.add(leaves_sprites)
 

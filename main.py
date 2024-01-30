@@ -9,10 +9,17 @@ pygame.init()
 size = width, height = 1000, 650
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+font_style = pygame.font.SysFont(None, 50)
 worm_size = 50
-worm_speed = 15
+worm_speed = 10
 running = True
 game_over = False
+leaves = []
+
+
+def message(msg, color):
+    mesg = font_style.render(msg, True, color)
+    screen.blit(mesg, [width / 2 - mesg.get_width() / 2, height / 2 - mesg.get_height() / 2])
 
 
 def terminate():
@@ -30,7 +37,28 @@ def load_image(name):
 
 
 def start_screen():
-    pass
+    message('Жми пробел и побежали кушать!', 'blue')
+    pygame.display.flip()
+    space = False
+    while not space:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    space = True
+
+
+def final_screen():
+    GameOver()
+    while game_over:
+        all_sprites.draw(screen)
+        all_sprites.update()
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN or event.type == pygame.QUIT or event.type == pygame.MOUSEBUTTONDOWN:
+                terminate()
+    pygame.time.set_timer(CREATELEAF, 0)
 
 
 def move(x, y):
@@ -64,13 +92,28 @@ class Leaf(pygame.sprite.Sprite):
         all_sprites.add(leaves_sprites)
 
 
+class GameOver(pygame.sprite.Sprite):
+    image = load_image('gameover.png')
+
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.k = 0
+        self.image = pygame.transform.scale(GameOver.image, (width, height))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = -width, 0
+
+    def update(self, *args):
+        if self.rect[0] < 0:
+            self.rect = self.rect.move(20, 0)
+            clock.tick(100)
+
+
 CREATELEAF = pygame.USEREVENT + 1
 pygame.time.set_timer(CREATELEAF, 10000)
 
 all_sprites = pygame.sprite.Group()
 worm_sprites = pygame.sprite.Group()
 leaves_sprites = pygame.sprite.Group()
-
 
 start_screen()
 
@@ -81,12 +124,9 @@ def game():
         Player((200 - worm_size * i, 200))
     x, y = 0, 0
     while running:
-        while game_over:
+        if game_over:
             screen.fill('black')
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN or event.type == pygame.QUIT or event.type == pygame.MOUSEBUTTONDOWN:
-                    terminate()
+            final_screen()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()

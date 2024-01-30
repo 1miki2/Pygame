@@ -9,6 +9,10 @@ pygame.init()
 size = width, height = 1000, 650
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+worm_size = 50
+worm_speed = 15
+running = True
+game_over = False
 
 
 def terminate():
@@ -29,23 +33,24 @@ def start_screen():
     pass
 
 
-def final_screen():
-    pygame.time.set_timer(CREATELEAF, 0)
-
-
-def game():
-    screen.fill('dark green')
+def move(x, y):
+    for i in worm_sprites:
+        i.rect = i.rect.move(x, y)
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, coord):
-        super().__init__(all_sprites)
-        self.image = pygame.Surface([10, 10])
-        self.rect = pygame.Rect(coord[0], coord[1], 10, 10)
+        super().__init__(worm_sprites, all_sprites)
+        self.image = pygame.Surface([worm_size, worm_size])
+        self.rect = pygame.Rect(coord[0], coord[1], worm_size, worm_size)
         self.image.fill('green')
 
     def update(self, *args):
-        pass
+        global game_over
+        if args:
+            self.rect = self.rect.move(args[0], args[1])
+        if self.rect.x < 0 or self.rect.x > width or self.rect.y < 0 or self.rect.y > height:
+            game_over = True
 
 
 class Leaf(pygame.sprite.Sprite):
@@ -59,23 +64,52 @@ class Leaf(pygame.sprite.Sprite):
         all_sprites.add(leaves_sprites)
 
 
-start_screen()
 CREATELEAF = pygame.USEREVENT + 1
 pygame.time.set_timer(CREATELEAF, 10000)
+
 all_sprites = pygame.sprite.Group()
+worm_sprites = pygame.sprite.Group()
 leaves_sprites = pygame.sprite.Group()
-running = True
-Leaf()
-for i in range(5):
-    Player((200 - 10 * i, 200))
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            terminate()
-        if event.type == CREATELEAF:
-            Leaf()
-    game()
-    all_sprites.draw(screen)
-    all_sprites.update()
-    pygame.display.flip()
-pygame.quit()
+
+
+start_screen()
+
+
+def game():
+    Leaf()
+    for i in range(5):
+        Player((200 - worm_size * i, 200))
+    x, y = 0, 0
+    while running:
+        while game_over:
+            screen.fill('black')
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN or event.type == pygame.QUIT or event.type == pygame.MOUSEBUTTONDOWN:
+                    terminate()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == CREATELEAF:
+                Leaf()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    x, y = 0, -worm_size
+                if event.key == pygame.K_DOWN:
+                    x, y = 0, worm_size
+                if event.key == pygame.K_LEFT:
+                    x, y = -worm_size, 0
+                if event.key == pygame.K_RIGHT:
+                    x, y = worm_size, 0
+        screen.fill('dark green')
+        move(x, y)
+        worm_sprites.update(x, y)
+        all_sprites.draw(screen)
+        all_sprites.update()
+        pygame.display.flip()
+        clock.tick(worm_speed)
+    pygame.quit()
+    quit()
+
+
+game()

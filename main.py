@@ -11,10 +11,11 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 leaves = ['red_leaf.png', 'green_leaf.png', 'purple_leaf.png', 'pink_leaf.png']
 font_style = pygame.font.SysFont(None, 50)
-worm_size = 50
-worm_speed = 10
+worm_size = 100
+worm_speed = 5
 running = True
 game_over = False
+k = 0
 
 
 def message(msg, color):
@@ -69,9 +70,10 @@ def move(x, y):
 class Player(pygame.sprite.Sprite):
     def __init__(self, coord):
         super().__init__(worm_sprites, all_sprites)
-        self.image = pygame.Surface([worm_size, worm_size])
-        self.rect = pygame.Rect(coord[0], coord[1], worm_size, worm_size)
+        self.image = pygame.Surface((worm_size, worm_size))
         self.image.fill('green')
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(coord)
 
     def update(self, *args):
         global game_over
@@ -121,7 +123,7 @@ start_screen()
 def game():
     Leaf()
     for i in range(5):
-        Player((200 - worm_size * i, 200))
+        Player((worm_size + 37 * i, 200))
     x, y = 0, 0
     while running:
         if game_over:
@@ -143,7 +145,6 @@ def game():
                     x, y = worm_size, 0
         screen.fill('dark green')
         move(x, y)
-        worm_sprites.update(x, y)
         all_sprites.draw(screen)
         all_sprites.update()
         pygame.display.flip()

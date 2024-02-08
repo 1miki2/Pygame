@@ -7,9 +7,12 @@ BLOCK_SIZE = 10
 WALL_BLOCK = 3
 INITIAL_GAME_SPEED = 10
 BACKGROUND_COLOR = "dark green"
+APPLE_COLOR = "red"
+SNAKE_COLOR = "green"
+WALL_COLOR = "grey"
 SNAKE_LENGTH = 3
 APPLES = 3
-SIZE_X, SIZE_Y = WIDTH // 2 - WALL_BLOCK * 2, HEIGHT // 2 - WALL_BLOCK * 2
+SIZE_X, SIZE_Y = WIDTH - WALL_BLOCK * BLOCK_SIZE * 2, HEIGHT - WALL_BLOCK * BLOCK_SIZE * 2
 
 
 def main():
@@ -34,12 +37,12 @@ def initialize_pygame():
 def initialize_game_state():
     game_state = {
         "program_running": True,
-        "game_running": True,
+        "game_running": False,
         "game_paused": False,
         "game_speed": INITIAL_GAME_SPEED,
-        "game_score": 0,
-        "snake": [],
-        "apples": APPLES,
+        "score": 0,
+        "apples": [],
+        "snake": []
     }
     return game_state
 
@@ -69,15 +72,15 @@ def get_events():
 
 def update_game_state(events, game_state):
     check_key_presses(events, game_state)
-    move_snake(game_state)
-    check_collisions(game_state)
-    check_apple_consumption(game_state)
+    if game_state['game_running'] and not game_state['game_paused']:
+        move_snake(game_state)
+        check_collisions(game_state)
+        check_apple_consumption(game_state)
 
 
 def check_key_presses(events, game_state):
     if 'quit' in events:
-        print(1)
-        game_state['program_running'] = False
+        game_state["program_running"] = False
     elif not game_state['game_running']:
         if 'escape' in events:
             game_state['program_running'] = False
@@ -93,13 +96,13 @@ def check_key_presses(events, game_state):
         if 'escape' in events or 'space' in events:
             game_state['game_paused'] = True
         if 'up' in events:
-            game_state['direction'] = (0, -1)
+            game_state['direction'] = (0, -BLOCK_SIZE)
         if 'down' in events:
-            game_state['direction'] = (0, 1)
+            game_state['direction'] = (0, BLOCK_SIZE)
         if 'right' in events:
-            game_state['direction'] = (1, 0)
+            game_state['direction'] = (BLOCK_SIZE, 0)
         if 'left' in events:
-            game_state['direction'] = (-1, 0)
+            game_state['direction'] = (-BLOCK_SIZE, 0)
 
 
 def move_snake(game_state):
@@ -110,20 +113,27 @@ def move_snake(game_state):
 
 def check_collisions(game_state):
     x, y = game_state['snake'][0]
-    if x < 0 or y < 0 or x >= SIZE_X or y >= SIZE_Y or len(game_state['snake']) > len(set(game_state['snake'])):
+    if x < 0 or y < 0 or x >= SIZE_X - 10 or y >= SIZE_Y - 10 or len(game_state['snake']) > len(set(game_state['snake'])):
         game_state['game_running'] = False
 
 
 def check_apple_consumption(game_state):
+    apples_eaten = 0
     for apple in game_state['apples']:
         if apple == game_state['snake'][0]:
-
+            game_state['apples'].remove(apple)
+            place_apples(1, game_state)
+            game_state['score'] += 1
+            apples_eaten += 1
+            game_state['game_speed'] = round(game_state['game_speed'] * 1.1)
+    if apples_eaten == 0:
+        game_state['snake'].pop()
 
 
 def initialize_new_game(game_state):
     place_snake(SNAKE_LENGTH, game_state)
     place_apples(APPLES, game_state)
-    game_state['direction'] = []
+    game_state['direction'] = (BLOCK_SIZE, 0)
     game_state['game_paused'] = False
     game_state['score'] = 0
     game_state['game_speed'] = INITIAL_GAME_SPEED
@@ -131,25 +141,67 @@ def initialize_new_game(game_state):
 
 def update_screen(screen, game_state):
     screen.fill(BACKGROUND_COLOR)
+    if not game_state['game_running']:
+        print_new_game_message(screen)
+    elif game_state['game_paused']:
+        print_new_paused_message(screen)
+    else:
+        draw_apples(screen, game_state['apples'])
+        draw_snake(screen, game_state['snake'])
+    draw_walls(screen)
+    print_score(screen, game_state['score'])
     pygame.display.flip()
 
 
 def place_apples(apples, game_state):
-    game_state['apples'] = []
-    x = random.randint(0, SIZE_X - 1)
-    y = random.randint(0, SIZE_Y - 1)
+    x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - BLOCK_SIZE, 10)
+    y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - BLOCK_SIZE, 10)
     for i in range(apples):
         while (x, y) in game_state['apples'] or (x, y) in game_state['snake']:
-            x = random.randint(0, SIZE_X - 1)
-            y = random.randint(0, SIZE_Y - 1)
-        game_state['apples'].append(x, y)
+            x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - 1, 10)
+            y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - 1, 10)
+        game_state['apples'].append((x, y))
 
 
 def place_snake(length, game_state):
-    x, y = SIZE_X // 2, SIZE_Y // 2
+    x, y = round(SIZE_X // 2, -1), round(SIZE_Y // 2, -1)
     game_state['snake'].append((x, y))
     for i in range(1, length):
-        game_state['snake'].append(x - i, y)
+        game_state['snake'].append((x - i, y))
+
+
+def draw_apples(screen, apples):
+    for apple in apples:
+        x = apple[0] + WALL_BLOCK * BLOCK_SIZE
+        y = apple[1] + WALL_BLOCK * BLOCK_SIZE
+        pygame.draw.rect(screen, APPLE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
+
+
+def draw_snake(screen, snake):
+    for segment in snake:
+        x = segment[0] + WALL_BLOCK * BLOCK_SIZE
+        y = segment[1] + WALL_BLOCK * BLOCK_SIZE
+        pygame.draw.rect(screen, SNAKE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
+
+
+def draw_walls(screen):
+    wall_size = WALL_BLOCK * BLOCK_SIZE
+    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (WIDTH, wall_size)))
+    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (wall_size, HEIGHT)))
+    pygame.draw.rect(screen, WALL_COLOR, ((WIDTH - wall_size, 0), (WIDTH, HEIGHT)))
+    pygame.draw.rect(screen, WALL_COLOR, ((0, HEIGHT - wall_size), (WIDTH, HEIGHT)))
+
+
+def print_score(screen, score):
+    pass
+
+
+def print_new_game_message(screen):
+    pass
+
+
+def print_new_paused_message(screen):
+    pass
 
 
 def terminate():

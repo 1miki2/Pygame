@@ -10,9 +10,14 @@ BACKGROUND_COLOR = "dark green"
 APPLE_COLOR = "red"
 SNAKE_COLOR = "green"
 WALL_COLOR = "grey"
+TEXT_COLOR = "black"
+FILE_NAME = "data.txt"
 SNAKE_LENGTH = 3
 APPLES = 3
+RADIUS_APPLE = 5
 SIZE_X, SIZE_Y = WIDTH - WALL_BLOCK * BLOCK_SIZE * 2, HEIGHT - WALL_BLOCK * BLOCK_SIZE * 2
+apple_sprites = pygame.sprite.Group()
+FPS = 30
 
 
 def main():
@@ -41,6 +46,7 @@ def initialize_game_state():
         "game_paused": False,
         "game_speed": INITIAL_GAME_SPEED,
         "score": 0,
+        "now": 0,
         "apples": [],
         "snake": []
     }
@@ -113,8 +119,10 @@ def move_snake(game_state):
 
 def check_collisions(game_state):
     x, y = game_state['snake'][0]
-    if x < 0 or y < 0 or x >= SIZE_X - 10 or y >= SIZE_Y - 10 or len(game_state['snake']) > len(set(game_state['snake'])):
+    if x < 0 or y < 0 or x >= SIZE_X or y >= SIZE_Y or len(game_state['snake']) > len(
+            set(game_state['snake'])):
         game_state['game_running'] = False
+        game_state['apples'] = []
 
 
 def check_apple_consumption(game_state):
@@ -123,7 +131,9 @@ def check_apple_consumption(game_state):
         if apple == game_state['snake'][0]:
             game_state['apples'].remove(apple)
             place_apples(1, game_state)
-            game_state['score'] += 1
+            game_state['now'] += 1
+            if game_state['now'] > game_state['score']:
+                game_state['score'] = game_state['now']
             apples_eaten += 1
             game_state['game_speed'] = round(game_state['game_speed'] * 1.1)
     if apples_eaten == 0:
@@ -131,11 +141,12 @@ def check_apple_consumption(game_state):
 
 
 def initialize_new_game(game_state):
+    game_state['snake'] = []
     place_snake(SNAKE_LENGTH, game_state)
     place_apples(APPLES, game_state)
     game_state['direction'] = (BLOCK_SIZE, 0)
     game_state['game_paused'] = False
-    game_state['score'] = 0
+    game_state['now'] = 0
     game_state['game_speed'] = INITIAL_GAME_SPEED
 
 
@@ -149,7 +160,7 @@ def update_screen(screen, game_state):
         draw_apples(screen, game_state['apples'])
         draw_snake(screen, game_state['snake'])
     draw_walls(screen)
-    print_score(screen, game_state['score'])
+    print_score(screen, game_state['score'], game_state['now'])
     pygame.display.flip()
 
 
@@ -192,16 +203,52 @@ def draw_walls(screen):
     pygame.draw.rect(screen, WALL_COLOR, ((0, HEIGHT - wall_size), (WIDTH, HEIGHT)))
 
 
-def print_score(screen, score):
-    pass
+def print_score(screen, score, now):
+    font = pygame.font.SysFont('Courier New', 24, bold=True)
+    text_score = font.render("Score: " + str(score), True, TEXT_COLOR)
+    text_rect = text_score.get_rect()
+    text_rect.topleft = (WALL_BLOCK * BLOCK_SIZE, 0)
+    screen.blit(text_score, text_rect)
+
+    text = font.render("Now:   " + str(now), True, TEXT_COLOR)
+    text_rect = text.get_rect()
+    text_rect.topleft = (WALL_BLOCK * BLOCK_SIZE, 0)
+    text_rect.y = 30
+    screen.blit(text, text_rect)
 
 
 def print_new_game_message(screen):
-    pass
+    font = pygame.font.SysFont("Courier New", 35, bold=False)
+    text_list = ["Нажмите Enter, "
+                 "чтобы начать игру",
+                 "Или esc, чтобы выйти"]
+    string_rendered = font.render(text_list[0], True, pygame.Color('black'))
+    intro_rect = string_rendered.get_rect()
+    text_coord = [SIZE_X // 2 - intro_rect.width // 2, SIZE_Y // 2 - intro_rect.height // 2]
+    for line in text_list:
+        string_rendered = font.render(line, True, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord = [SIZE_X // 2 - intro_rect.width // 2, text_coord[1] + 40]
+        intro_rect.y = text_coord[1]
+        intro_rect.x = text_coord[0]
+        screen.blit(string_rendered, intro_rect)
 
 
 def print_new_paused_message(screen):
-    pass
+    font = pygame.font.SysFont("Courier New", 35, bold=False)
+    text_list = ["ПАУЗА",
+                 "чтобы начать игру нажмите Space",
+                 "Или esc, чтобы выйти"]
+    string_rendered = font.render(text_list[0], True, pygame.Color('black'))
+    intro_rect = string_rendered.get_rect()
+    text_coord = [SIZE_X // 2 - intro_rect.width // 2, 100]
+    for line in text_list:
+        string_rendered = font.render(line, True, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord = [SIZE_X // 2 - intro_rect.width // 2, text_coord[1] + 40]
+        intro_rect.y = text_coord[1]
+        intro_rect.x = text_coord[0]
+        screen.blit(string_rendered, intro_rect)
 
 
 def terminate():

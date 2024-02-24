@@ -1,18 +1,23 @@
 import pygame
 import sys
 import random
+from sprite import Worm
 
 WIDTH, HEIGHT = SCREEN_SIZE = (800, 600)
 BLOCK_SIZE = 10
 WALL_BLOCK = 3
+SNAKE_LENGTH = 3
+APPLES = 5
 INITIAL_GAME_SPEED = 10
+SPEED_CHANGE = 1.1
+FONT_SIZE = int(WALL_BLOCK * BLOCK_SIZE * 0.75)
+SIZE_X, SIZE_Y = WIDTH - WALL_BLOCK * BLOCK_SIZE * 2, HEIGHT - WALL_BLOCK * BLOCK_SIZE * 2
+
 BACKGROUND_COLOR = "dark green"
 APPLE_COLOR = "red"
 SNAKE_COLOR = "green"
 WALL_COLOR = "grey"
-SNAKE_LENGTH = 3
-APPLES = 3
-SIZE_X, SIZE_Y = WIDTH - WALL_BLOCK * BLOCK_SIZE * 2, HEIGHT - WALL_BLOCK * BLOCK_SIZE * 2
+TEXT_COLOR = "black"
 
 
 def main():
@@ -29,7 +34,7 @@ def main():
 def initialize_pygame():
     pygame.init()
     screen = pygame.display.set_mode(SCREEN_SIZE)
-    pygame.display.set_caption('Snake')
+    pygame.display.set_caption('Worm')
     clock = pygame.time.Clock()
     return screen, clock
 
@@ -125,7 +130,7 @@ def check_apple_consumption(game_state):
             place_apples(1, game_state)
             game_state['score'] += 1
             apples_eaten += 1
-            game_state['game_speed'] = round(game_state['game_speed'] * 1.1)
+            game_state['game_speed'] = round(game_state['game_speed'] * SPEED_CHANGE)
     if apples_eaten == 0:
         game_state['snake'].pop()
 
@@ -193,15 +198,43 @@ def draw_walls(screen):
 
 
 def print_score(screen, score):
-    pass
+        font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
+        text = font.render('Score: ' + str(score), True, TEXT_COLOR)
+        text_rect = text.get_rect()
+        text_rect.midleft = (WALL_BLOCK * BLOCK_SIZE, WALL_BLOCK * BLOCK_SIZE // 2)
+        screen.blit(text, text_rect)
+
+
+# sprites
+moving_sprites = pygame.sprite.Group()
+player = Worm(410, 350)
+moving_sprites.add(player)
 
 
 def print_new_game_message(screen):
-    pass
+    font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
+    text1 = font.render('Press ENTER to start new game', True, TEXT_COLOR)
+    text2 = font.render('Press ESCAPE to quit', True, TEXT_COLOR)
+    text_rect1 = text1.get_rect()
+    text_rect2 = text2.get_rect()
+    text_rect1.center = (WIDTH // 2, HEIGHT // 4.5 - FONT_SIZE // 2)
+    text_rect2.center = (WIDTH // 2, HEIGHT // 4.5 + FONT_SIZE // 2)
+    screen.blit(text1, text_rect1)
+    screen.blit(text2, text_rect2)
+    moving_sprites.draw(screen)
+    moving_sprites.update(0.25)
 
 
 def print_new_paused_message(screen):
-    pass
+    font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
+    text1 = font.render('Press SPACE to continue', True, TEXT_COLOR)
+    text2 = font.render('Press ESCAPE to start new game', True, TEXT_COLOR)
+    text_rect1 = text1.get_rect()
+    text_rect2 = text2.get_rect()
+    text_rect1.center = (WIDTH // 2, HEIGHT // 2 - FONT_SIZE // 2)
+    text_rect2.center = (WIDTH // 2, HEIGHT // 2 + FONT_SIZE // 2)
+    screen.blit(text1, text_rect1)
+    screen.blit(text2, text_rect2)
 
 
 def terminate():

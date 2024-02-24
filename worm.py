@@ -46,6 +46,7 @@ def initialize_game_state():
         "game_paused": False,
         "game_speed": INITIAL_GAME_SPEED,
         "score": 0,
+        'max_score': 0,
         "apples": [],
         "snake": []
     }
@@ -118,7 +119,8 @@ def move_snake(game_state):
 
 def check_collisions(game_state):
     x, y = game_state['snake'][0]
-    if x < 0 or y < 0 or x >= SIZE_X - 10 or y >= SIZE_Y - 10 or len(game_state['snake']) > len(set(game_state['snake'])):
+    if x < 0 or y < 0 or x >= SIZE_X - 10 or y >= SIZE_Y - 10 or len(game_state['snake']) > len(
+            set(game_state['snake'])):
         game_state['game_running'] = False
 
 
@@ -129,10 +131,16 @@ def check_apple_consumption(game_state):
             game_state['apples'].remove(apple)
             place_apples(1, game_state)
             game_state['score'] += 1
+            update_max_score(game_state)
             apples_eaten += 1
             game_state['game_speed'] = round(game_state['game_speed'] * SPEED_CHANGE)
     if apples_eaten == 0:
         game_state['snake'].pop()
+
+
+def update_max_score(game_state):
+    if game_state['score'] > game_state['max_score']:
+        game_state['max_score'] = game_state['score']
 
 
 def initialize_new_game(game_state):
@@ -142,6 +150,23 @@ def initialize_new_game(game_state):
     game_state['game_paused'] = False
     game_state['score'] = 0
     game_state['game_speed'] = INITIAL_GAME_SPEED
+
+
+def place_snake(length, game_state):
+    x, y = round(SIZE_X // 2, -1), round(SIZE_Y // 2, -1)
+    game_state['snake'].append((x, y))
+    for i in range(1, length):
+        game_state['snake'].append((x - i, y))
+
+
+def place_apples(apples, game_state):
+    x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - BLOCK_SIZE, 10)
+    y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - BLOCK_SIZE, 10)
+    for i in range(apples):
+        while (x, y) in game_state['apples'] or (x, y) in game_state['snake']:
+            x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - 1, 10)
+            y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - 1, 10)
+        game_state['apples'].append((x, y))
 
 
 def update_screen(screen, game_state):
@@ -155,54 +180,8 @@ def update_screen(screen, game_state):
         draw_snake(screen, game_state['snake'])
     draw_walls(screen)
     print_score(screen, game_state['score'])
+    print_max_score(screen, game_state['max_score'])
     pygame.display.flip()
-
-
-def place_apples(apples, game_state):
-    x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - BLOCK_SIZE, 10)
-    y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - BLOCK_SIZE, 10)
-    for i in range(apples):
-        while (x, y) in game_state['apples'] or (x, y) in game_state['snake']:
-            x = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_X - 1, 10)
-            y = random.randrange(WALL_BLOCK * BLOCK_SIZE, SIZE_Y - 1, 10)
-        game_state['apples'].append((x, y))
-
-
-def place_snake(length, game_state):
-    x, y = round(SIZE_X // 2, -1), round(SIZE_Y // 2, -1)
-    game_state['snake'].append((x, y))
-    for i in range(1, length):
-        game_state['snake'].append((x - i, y))
-
-
-def draw_apples(screen, apples):
-    for apple in apples:
-        x = apple[0] + WALL_BLOCK * BLOCK_SIZE
-        y = apple[1] + WALL_BLOCK * BLOCK_SIZE
-        pygame.draw.rect(screen, APPLE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
-
-
-def draw_snake(screen, snake):
-    for segment in snake:
-        x = segment[0] + WALL_BLOCK * BLOCK_SIZE
-        y = segment[1] + WALL_BLOCK * BLOCK_SIZE
-        pygame.draw.rect(screen, SNAKE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
-
-
-def draw_walls(screen):
-    wall_size = WALL_BLOCK * BLOCK_SIZE
-    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (WIDTH, wall_size)))
-    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (wall_size, HEIGHT)))
-    pygame.draw.rect(screen, WALL_COLOR, ((WIDTH - wall_size, 0), (WIDTH, HEIGHT)))
-    pygame.draw.rect(screen, WALL_COLOR, ((0, HEIGHT - wall_size), (WIDTH, HEIGHT)))
-
-
-def print_score(screen, score):
-        font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
-        text = font.render('Score: ' + str(score), True, TEXT_COLOR)
-        text_rect = text.get_rect()
-        text_rect.midleft = (WALL_BLOCK * BLOCK_SIZE, WALL_BLOCK * BLOCK_SIZE // 2)
-        screen.blit(text, text_rect)
 
 
 # sprites
@@ -237,9 +216,48 @@ def print_new_paused_message(screen):
     screen.blit(text2, text_rect2)
 
 
+def draw_apples(screen, apples):
+    for apple in apples:
+        x = apple[0] + WALL_BLOCK * BLOCK_SIZE
+        y = apple[1] + WALL_BLOCK * BLOCK_SIZE
+        pygame.draw.rect(screen, APPLE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
+
+
+def draw_snake(screen, snake):
+    for segment in snake:
+        x = segment[0] + WALL_BLOCK * BLOCK_SIZE
+        y = segment[1] + WALL_BLOCK * BLOCK_SIZE
+        pygame.draw.rect(screen, SNAKE_COLOR, ((x, y), (BLOCK_SIZE, BLOCK_SIZE)), border_radius=10)
+
+
+def draw_walls(screen):
+    wall_size = WALL_BLOCK * BLOCK_SIZE
+    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (WIDTH, wall_size)))
+    pygame.draw.rect(screen, WALL_COLOR, ((0, 0), (wall_size, HEIGHT)))
+    pygame.draw.rect(screen, WALL_COLOR, ((WIDTH - wall_size, 0), (WIDTH, HEIGHT)))
+    pygame.draw.rect(screen, WALL_COLOR, ((0, HEIGHT - wall_size), (WIDTH, HEIGHT)))
+
+
+def print_score(screen, score):
+    font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
+    text = font.render('Score: ' + str(score), True, TEXT_COLOR)
+    text_rect = text.get_rect()
+    text_rect.midleft = (WALL_BLOCK * BLOCK_SIZE, WALL_BLOCK * BLOCK_SIZE // 2)
+    screen.blit(text, text_rect)
+
+
+def print_max_score(screen, score):
+    font = pygame.font.SysFont('Courier New', FONT_SIZE, bold=True)
+    text = font.render('High score: ' + str(score), True, TEXT_COLOR)
+    text_rect = text.get_rect()
+    text_rect.midright = (WIDTH - 35, 15)
+    screen.blit(text, text_rect)
+
+
 def terminate():
     pygame.quit()
     sys.exit()
 
 
-main()
+if __name__ == "__main__":
+    main()
